@@ -106,6 +106,8 @@ typedef void		(* NemoDragEachSelectedItemIterator)	(NemoDragEachSelectedItemData
 								 gpointer iterator_context, 
 								 gpointer data);
 
+void			    nemo_drag_add_portal_targets		(GtkTargetList		      *list,
+									 guint				       info);
 void			    nemo_drag_init				(NemoDragInfo		      *drag_info,
 									 const GtkTargetEntry		      *drag_types,
 									 int				       drag_type_count,

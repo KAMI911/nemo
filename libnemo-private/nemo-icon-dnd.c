@@ -2060,6 +2060,8 @@ nemo_icon_dnd_init (NemoIconContainer *container)
 	container->details->dnd_info = g_new0 (NemoIconDndInfo, 1);
 	nemo_drag_init (&container->details->dnd_info->drag_info,
 		drag_types, G_N_ELEMENTS (drag_types), TRUE);
+	nemo_drag_add_portal_targets (container->details->dnd_info->drag_info.target_list,
+				      NEMO_ICON_DND_URI_LIST);
 
 	/* Set up the widget as a drag destination.
 	 * (But not a source, as drags starting from this widget will be

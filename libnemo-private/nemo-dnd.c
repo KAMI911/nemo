@@ -58,6 +58,28 @@
  */
 #define MAX_AUTOSCROLL_DELTA 50
 
+/* Sandboxed (Flatpak) apps can't open the paths of text/uri-list. GTK offers
+ * the FileTransfer portal targets next to it when the portal is available:
+ * add just those, the plain URI list is already in the caller's targets. */
+void
+nemo_drag_add_portal_targets (GtkTargetList *list, guint info)
+{
+	GtkTargetList *uri_targets = gtk_target_list_new (NULL, 0);
+	GtkTargetEntry *table;
+	int i, n;
+
+	gtk_target_list_add_uri_targets (uri_targets, info);
+	table = gtk_target_table_new_from_list (uri_targets, &n);
+	for (i = 0; i < n; i++) {
+		if (g_strcmp0 (table[i].target, NEMO_ICON_DND_URI_LIST_TYPE) != 0) {
+			gtk_target_list_add (list, gdk_atom_intern (table[i].target, FALSE),
+					     0, info);
+		}
+	}
+	gtk_target_table_free (table, n);
+	gtk_target_list_unref (uri_targets);
+}
+
 void
 nemo_drag_init (NemoDragInfo     *drag_info,
 		    const GtkTargetEntry *drag_types,
@@ -774,6 +796,12 @@ add_one_uri (const char *uri, const char *path_str, int x, int y, int w, int h, 
 }
 
 static void
+add_one_uri_to_array (const char *uri, const char *path_str, int x, int y, int w, int h, gpointer data)
+{
+	g_ptr_array_add ((GPtrArray *) data, g_strdup (uri));
+}
+
+static void
 add_one_path (const char *uri, const char *path_str, int x, int y, int w, int h, gpointer data)
 {
     GString *result;
@@ -804,6 +832,20 @@ nemo_drag_drag_data_get (GtkWidget *widget,
 		break;
 		
 	case NEMO_ICON_DND_URI_LIST:
+		if (g_strcmp0 (gdk_atom_name (gtk_selection_data_get_target (selection_data)),
+			       NEMO_ICON_DND_URI_LIST_TYPE) != 0) {
+			/* FileTransfer portal target: GTK registers the files with the
+			 * portal and hands over the key. Fails for non-local files, in
+			 * which case there is nothing to offer. */
+			GPtrArray *uris = g_ptr_array_new_with_free_func (g_free);
+			gboolean ok;
+
+			(* each_selected_item_iterator) (add_one_uri_to_array, container_context, uris);
+			g_ptr_array_add (uris, NULL);
+			ok = gtk_selection_data_set_uris (selection_data, (char **) uris->pdata);
+			g_ptr_array_free (uris, TRUE);
+			return ok;
+		}
 		result = g_string_new (NULL);
 		(* each_selected_item_iterator) (add_one_uri, container_context, result);
 		break;

@@ -1643,6 +1643,7 @@ nemo_list_model_get_drag_target_list (void)
 
 	target_list = gtk_target_list_new (drag_types, G_N_ELEMENTS (drag_types));
 	gtk_target_list_add_text_targets (target_list, NEMO_ICON_DND_TEXT);
+	nemo_drag_add_portal_targets (target_list, NEMO_ICON_DND_URI_LIST);
 
 	return target_list;
 }
